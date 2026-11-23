@@ -178,3 +178,27 @@ echo
 echo "抓包文件：$PCAP"
 echo "诊断结束"
 echo "================================================"
+
+
+echo
+echo "========== Cloudflare IPv4 / IPv6 对照 =========="
+
+for family in -4 -6; do
+  echo
+  echo "===== $family cp.cloudflare.com ====="
+
+  curl "$family" -sS -o /dev/null \
+    --connect-timeout 5 \
+    --max-time 10 \
+    -w "HTTP=%{http_code} IP=%{remote_ip} TCP=%{time_connect}s TLS=%{time_appconnect}s FIRST=%{time_starttransfer}s TOTAL=%{time_total}s\n" \
+    https://cp.cloudflare.com/generate_204
+
+  echo
+  echo "===== $family www.cloudflare.com ====="
+
+  curl "$family" -sS -o /dev/null \
+    --connect-timeout 5 \
+    --max-time 10 \
+    -w "HTTP=%{http_code} IP=%{remote_ip} TCP=%{time_connect}s TLS=%{time_appconnect}s FIRST=%{time_starttransfer}s TOTAL=%{time_total}s\n" \
+    https://www.cloudflare.com/cdn-cgi/trace
+done
