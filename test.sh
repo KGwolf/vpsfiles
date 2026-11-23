@@ -116,3 +116,65 @@ echo "===== 8. 结束 ====="
 echo "抓包文件: $PCAP"
 echo "本次诊断没有修改任何网络配置。"
 echo "============================================================"
+
+# ============================================================
+# 修正版：只抓 VPS IPv4 入站 443
+# ============================================================
+
+echo
+echo "================================================"
+echo " VPS IPv4 入站 443 专项抓包"
+echo "================================================"
+
+PCAP="/tmp/proxy-inbound-v2-$(date +%Y%m%d-%H%M%S).pcap"
+
+echo
+echo "===== 1. 确认本机公网 IPv4 ====="
+ip -4 addr show dev eth0
+
+echo
+echo "===== 2. 开始抓包 ====="
+echo "请在接下来 30 秒内，通过 FClash 当前节点访问网站。"
+echo
+
+timeout 30 tcpdump \
+  -ni eth0 \
+  -nn \
+  -s 0 \
+  -U \
+  -w "$PCAP" \
+  'dst host 64.112.41.121 and tcp dst port 443' 2>&1
+
+echo
+echo "===== 3. 抓包结果 ====="
+ls -lh "$PCAP"
+
+echo
+echo "===== 4. 入站数据包明细 ====="
+tcpdump -nn -tttt -r "$PCAP" 2>/dev/null | head -100
+
+echo
+echo "===== 5. TCP 标志统计 ====="
+tcpdump -nn -r "$PCAP" 2>/dev/null |
+awk '
+/Flags \[S\]/ {syn++}
+/Flags \[S\.\]/ {synack++}
+/Flags \[P\.\]/ {data++}
+/Flags \[R/ {rst++}
+/Flags \[F/ {fin++}
+END {
+  print "SYN:", syn+0
+  print "SYN-ACK:", synack+0
+  print "数据包:", data+0
+  print "RST:", rst+0
+  print "FIN:", fin+0
+}'
+
+echo
+echo "===== 6. TCP 连接状态 ====="
+ss -ant | grep '64.112.41.121:443' | head -30
+
+echo
+echo "抓包文件：$PCAP"
+echo "诊断结束"
+echo "================================================"
