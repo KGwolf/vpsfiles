@@ -143,7 +143,7 @@ timeout 30 tcpdump \
   -s 0 \
   -U \
   -w "$PCAP" \
-  'dst host 64.112.41.121 and tcp dst port 443' 2>&1
+  'host 64.112.41.121 and tcp port 443' 2>&1
 
 echo
 echo "===== 3. 抓包结果 ====="
